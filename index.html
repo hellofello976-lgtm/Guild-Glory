@@ -907,7 +907,10 @@
         function handleLogout() {
             sessionStorage.removeItem('authenticated');
             sessionStorage.removeItem('selectedGuild');
-            location.reload();
+            document.getElementById('dashboardContainer').style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
         }
 
         function showError(message) {
@@ -927,7 +930,8 @@
 
         function checkAuth() {
             if (!sessionStorage.getItem('authenticated')) {
-                location.reload();
+                document.getElementById('dashboardContainer').style.display = 'none';
+                document.getElementById('loginContainer').style.display = 'flex';
             }
         }
 
