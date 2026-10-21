@@ -1,26 +1,34 @@
+# Guild Glory - Combined Repo Configuration
+# For repos with both web (HTML/JS) and Python (Flask) backend
+
 [build]
-  command = "pip install -r requirements.txt"
-  functions = "functions"
   publish = "."
+  command = "echo 'Static site mode - Python backend runs separately'"
 
-[functions]
-  directory = "functions"
-  node_bundler = "python"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/app/:splat"
-  status = 200
-
+# Serve index.html for all routes (SPA routing)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
+# Development server
 [dev]
   command = "python app.py"
   port = 5000
+  targetPort = 5000
+  framework = "python"
 
+# Production environment variables
 [env.production]
   FLASK_ENV = "production"
   DEBUG = "False"
+  NODE_ENV = "production"
+
+# Cache settings
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
