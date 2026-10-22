@@ -937,12 +937,7 @@
         // ═══════════════════════════════════════════════════════
 
         let guilds = JSON.parse(localStorage.getItem('guilds')) || [];
-        let accounts = JSON.parse(localStorage.getItem('accounts')) || [
-            { uid: "8317389851", password: "AE4B10C2EDB7CCE86A4285CFCBC799C52DFFBF3C541B8576FDB9F71FD407B916", name: "UNFAIR395242", account_id: "18804938088", region: "BD", created_at: "2026-10-20 11:27:11" },
-            { uid: "8317389858", password: "320EED7EA31A677748D77B089F383DD647D4903B24E1748452CB3DADF31B6509", name: "UNFAIR378665", account_id: "18804938140", region: "BD", created_at: "2026-10-20 11:27:12" },
-            { uid: "8317389850", password: "9B34523322D98FE44FA5E02803A9CCFBDAB18761E0658532A240B51FE8E0ACD2", name: "UNFAIR632381", account_id: "18804938141", region: "BD", created_at: "2026-10-20 11:27:12" },
-            { uid: "8317389869", password: "6DD4FB7C10E1C620A07A8845476F836AA749D82E574FBBC512E52DCB52A7C749", name: "UNFAIR688484", account_id: "18804938170", region: "BD", created_at: "2026-10-20 11:27:12" }
-        ];
+        let accounts = [];
 
         let selectedRegion = 'BD';
         let selectedGuild = null;
@@ -1081,7 +1076,21 @@
             document.getElementById('activeRegions').textContent = regions;
         }
 
-        function loadData() {
+        async function loadData() {
+            // Fetch accounts from backend (accounts.json)
+            try {
+                const response = await fetch('/api/accounts');
+                if (response.ok) {
+                    const data = await response.json();
+                    accounts = data.accounts || [];
+                } else {
+                    console.log('Using local accounts');
+                }
+            } catch (e) {
+                console.log('Backend not available, using local storage');
+                accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+            }
+
             updateGuildList();
             updateAccountTable();
             updateStats();
@@ -1111,24 +1120,30 @@
             output.classList.add('loading');
 
             try {
-                // Simulate execution - in real scenario, this would call your backend
+                // Call backend to execute guild.py
                 const response = await fetch('/api/run-guild', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ guildId: selectedGuild.id, accounts: selectedGuild.accounts })
-                }).catch(() => ({ ok: false }));
+                    body: JSON.stringify({
+                        guildId: selectedGuild.id,
+                        accounts: selectedGuild.accounts,
+                        region: selectedGuild.region
+                    })
+                });
 
-                if (!response.ok) {
-                    output.textContent = '[DEMO MODE] guild.py executed\\n' +
-                        'Loaded ' + selectedGuild.accountCount + ' accounts\\n' +
+                const data = await response.json();
+
+                if (response.ok) {
+                    output.textContent = '[SUCCESS] ' + data.message + '\\n' +
                         'Guild ID: ' + selectedGuild.id + '\\n' +
-                        'Processing accounts for region: ' + selectedGuild.region + '\\n' +
-                        '✓ Guild execution completed\\n';
+                        'Accounts: ' + selectedGuild.accountCount + '\\n' +
+                        'Region: ' + selectedGuild.region + '\\n' +
+                        'Executing: guild.py...\\n';
                 } else {
-                    output.textContent = await response.text();
+                    output.textContent = '[ERROR] ' + (data.error || 'Failed to run guild script');
                 }
             } catch (err) {
-                output.textContent = '[ERROR] ' + err.message;
+                output.textContent = '[ERROR] Connection failed: ' + err.message + '\\nMake sure backend is running at http://localhost:5000';
             }
 
             output.classList.remove('loading');
@@ -1154,25 +1169,32 @@
             output.classList.add('loading');
 
             try {
+                // Call backend to execute main.py
                 const response = await fetch('/api/run-main', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ guildId: selectedGuild.id, accounts: selectedGuild.accounts })
-                }).catch(() => ({ ok: false }));
+                    body: JSON.stringify({
+                        guildId: selectedGuild.id,
+                        accounts: selectedGuild.accounts,
+                        region: selectedGuild.region
+                    })
+                });
 
-                if (!response.ok) {
-                    output.textContent = '[DEMO MODE] main.py executed\\n' +
-                        'Squad Bot Initialized\\n' +
-                        'Team Mode: Enabled\\n' +
-                        'Team Size: 4\\n' +
+                const data = await response.json();
+
+                if (response.ok) {
+                    output.textContent = '[SUCCESS] ' + data.message + '\\n' +
+                        'Bot Started\\n' +
+                        'Guild ID: ' + selectedGuild.id + '\\n' +
+                        'Accounts: ' + selectedGuild.accountCount + '\\n' +
                         'Region: ' + selectedGuild.region + '\\n' +
-                        'Searching for matches...\\n' +
-                        '✓ Main execution running\\n';
+                        'Executing: main.py...\\n' +
+                        'Status: RUNNING\\n';
                 } else {
-                    output.textContent = await response.text();
+                    output.textContent = '[ERROR] ' + (data.error || 'Failed to run main script');
                 }
             } catch (err) {
-                output.textContent = '[ERROR] ' + err.message;
+                output.textContent = '[ERROR] Connection failed: ' + err.message + '\\nMake sure backend is running at http://localhost:5000';
             }
 
             output.classList.remove('loading');
